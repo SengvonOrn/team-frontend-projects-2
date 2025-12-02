@@ -1,0 +1,8 @@
+| Type              | Browser/Node | Features/Notes                            |
+| ----------------- | ------------ | ----------------------------------------- |
+| Fetch API         | Browser      | Native, Promise-based, needs `.json()`    |
+| Axios             | Browser/Node | Auto JSON, interceptors, global config    |
+| Async/Await       | Browser/Node | Syntax style, works with fetch or axios   |
+| GraphQL Fetch     | Browser/Node | POST queries, needs JSON body             |
+| SWR / React Query | Browser      | React-specific, caching & auto revalidate |
+| Node.js libraries | Node only    | `node-fetch`, `axios`, `got`              |
