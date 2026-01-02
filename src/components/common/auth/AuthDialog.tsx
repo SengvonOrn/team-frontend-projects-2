@@ -39,7 +39,6 @@ export default function AuthModal({ type, className }: AuthModalProps) {
           email,
           password,
         });
-
         if (res?.error) {
           const errorMessage =
             res.error === "CredentialsSignin"
@@ -50,8 +49,11 @@ export default function AuthModal({ type, className }: AuthModalProps) {
         } else {
           console.log("Login Successful");
           setOpen(false);
-          window.location.href = "/dashboard";
+          window.location.href = "/home";
         }
+
+
+        
       } else {
         // Register
         const registerRes = await fetch(`${Backend_URL}/api/auth/register`, {
@@ -62,7 +64,6 @@ export default function AuthModal({ type, className }: AuthModalProps) {
         });
 
         const data = await registerRes.json();
-
         if (!registerRes.ok) {
           setError(data.message || "Registration failed");
         } else {
@@ -77,7 +78,7 @@ export default function AuthModal({ type, className }: AuthModalProps) {
           });
 
           if (!loginRes?.error) {
-            window.location.href = "/dashboard";
+            window.location.reload();
           }
         }
       }
@@ -186,7 +187,6 @@ export default function AuthModal({ type, className }: AuthModalProps) {
             </Button>
           </>
         )}
-
         <DialogClose className="mt-4 cursor-pointer text-sm">Close</DialogClose>
       </DialogContent>
     </Dialog>

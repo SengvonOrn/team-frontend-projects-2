@@ -1,8 +1,77 @@
-export type User = {
+export type LocationData = {
+  id?: string | number;
+  latitude: number | null;
+  longitude: number | null;
+  address: string;
+  city: string;
+  country: string;
+  isDefault?: boolean; // ✅ add this
+};
+
+
+export type ProfileImage = {
   id: number;
+  userId: number;
+  profile?: string;
+  thumbnail?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Customer = {
+  id: string;
+  userId: number;
+  email: string;
+  username: string;
+  phone: string;
+  address: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Comment = {
+  id: string;
+  userId: number;
+  productId: string;
+  title: string;
+  comment: string;
+  rating: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CartItem = {
+  id?: string;
+  productId?: string;
+  quantity?: number;
+};
+
+
+
+
+export type UserData = {
+  id: string;
   name: string;
   email: string;
+  username: string;
+  image: string | null;
+  role: string;
+  status: string;
+  hasStore: boolean;
+  followersCount: number
+  createdAt: string;
+  updatedAt: string;
+
+  profileImage: ProfileImage | null;
+  customers: Customer[];
+  comments: Comment[];
+  cartItems: CartItem[];
+  locations: LocationData[];
 };
+
+
+
+
 
 // For login request
 export type LoginRequest = {
@@ -23,7 +92,7 @@ export type LoginResponse = {
 };
 
 // Register response (usually returns created user)
-export type RegisterResponse = User;
+export type RegisterResponse = UserData;
 
 export type ApiResponse<T> = {
   success: boolean;
@@ -48,7 +117,7 @@ export type Transaction = {
   id: string;
   $id: string;
   name: string;
-  role: string
+  role: string;
   paymentChannel: string;
   type: string;
   accountId: string;
@@ -62,3 +131,23 @@ export type Transaction = {
   senderBankId: string;
   receiverBankId: string;
 };
+
+//===========================================
+
+interface EditProfileFormProps {
+  formData: {
+    name: string;
+    email: string;
+    password: string;
+    username: string;
+  };
+  saving: boolean;
+  token: string; // ✅ ADD
+  onChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  onCancel: () => void;
+  currentAvatar?: string;
+  currentCover?: string;
+}

@@ -11,7 +11,10 @@ type CartItem = {
   id: number;
   name: string;
   price: number;
+  size?: string;
+  color?: string;
   quantity: number;
+  image: string;
 };
 
 type CartContextType = {
@@ -20,6 +23,7 @@ type CartContextType = {
   increaseQty: (id: number) => void;
   decreaseQty: (id: number) => void;
   removeItem: (id: number) => void;
+  clearCart?: () => void;
 };
 
 const CartContext = createContext<CartContextType>({
@@ -28,8 +32,8 @@ const CartContext = createContext<CartContextType>({
   increaseQty: () => {},
   decreaseQty: () => {},
   removeItem: () => {},
+  clearCart: () => {}, // optional, can be empty function
 });
-
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 

@@ -1,12 +1,12 @@
 "use client";
-
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ModeToggle } from "./theme-toggler";
 import { Header } from "@/components/navbar-hover";
+import Image from "next/image";
+import logo from "@/../public/images/LOGO.jpg";
 import { TopNavbar } from "../components/ui/TopNavbar";
 import { useScrollDetection } from "@/hooks/useScrollDetection";
+import Link from "next/link";
 
 export function SiteHeader() {
   const { hideTop, blurHeader } = useScrollDetection(60, 100);
@@ -31,24 +31,28 @@ export function SiteHeader() {
             : "bg-background"
         }`}
       >
-        <div className="flex w-full items-center justify-center px-6">
-          <div className="flex items-center gap-3">
+        <div className="flex w-full items-center justify-evenly px-6">
+          <div className="flex items-center justify-between gap-3">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mx-2 h-4" />
-            <Header />
-
-            <div className="flex items-center gap-x-3">
-              <Separator orientation="vertical" className="mx-2 h-4" />
-
-              {/* Mode Toggle */}
-              <Button
-                variant="ghost"
-                asChild
-                className="hidden w-[40px] sm:flex"
-              >
-                <ModeToggle />
-              </Button>
+            <div className="flex-shrink-0">
+              <Link href="/" className="flex items-center gap-2">
+                <Image
+                  src={logo}
+                  alt="Camben Logo"
+                  width={40}
+                  height={40}
+                  className="h-10 w-10"
+                />
+                <div className="flex flex-col">
+                  <span className="text-xl font-bold">Camben</span>
+                  <span className="text-xs">Open on The World</span>
+                </div>
+              </Link>
             </div>
+          </div>
+          <div>
+            <Header />
           </div>
         </div>
       </header>

@@ -1,85 +1,120 @@
 "use client";
-
-import React from "react";
+import React, { useState } from "react";
 import { usePaginatedDeals } from "@/hooks/usePaginatedDeals";
 import { Button } from "@/components/ui/button";
 import { TopDealProps } from "@/types/deals";
 import { useCart } from "@/context/cart/CartContext";
+import Link from "next/link";
+import { ShoppingCart, Star, Flame } from "lucide-react";
+import { useToast } from "@/hooks/use-Toast";
 
 export function TopDeal({ topDeals }: TopDealProps) {
   const { page, setPage, visibleDeals, getPages, totalPages, renderStars } =
-    usePaginatedDeals(topDeals, 5, 6);
+    usePaginatedDeals(topDeals, 3, 5);
 
-  const { addToCart } = useCart(); // ✅ correct hook
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+  const [loadingId, setLoadingId] = useState<number | null>(null);
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Gradient Header */}
-      <div className="bg-gradient-to-r from-red-500 via-pink-500 to-orange-500 rounded-t-xl p-4 flex justify-between items-center text-white shadow-md">
-        <h2 className="text-lg md:text-xl font-semibold">🔥 Top Deals</h2>
-        <a href="#" className="text-sm underline hover:text-gray-100">
-          See more
-        </a>
+      {/* 🔥 Header */}
+      <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-orange-500 p-5 text-white shadow-lg">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Flame className="w-5 h-5" /> Top Deals
+        </h2>
+        <Link href="/views" className="text-sm underline hover:opacity-80">
+          View all
+        </Link>
       </div>
 
-      {/* Deals Grid */}
+      {/* 🧱 Product Grid */}
       {visibleDeals.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
           {visibleDeals.map((deal) => (
-            <div
+            <Link
               key={deal.id}
-              className="border rounded-lg p-3 hover:shadow-xl hover:scale-105 transition-all duration-300 bg-white cursor-pointer"
+              href={`/products/${deal.id}`}
+              className="group relative rounded-xl border bg-white/80 dark:bg-gray-900/80 backdrop-blur p-3 transition-all hover:-translate-y-1 hover:shadow-2xl"
             >
+              {/* Badge */}
+              <span className="absolute top-2 left-2 z-10 rounded-full bg-red-500 px-2 py-0.5 text-[10px] text-white font-semibold">
+                HOT
+              </span>
+
+              {/* Image */}
               {deal.image && (
-                <img
-                  src={deal.image}
-                  alt={deal.name}
-                  className="w-full h-40 object-cover rounded-md mb-3"
-                />
+                <div className="overflow-hidden rounded-lg">
+                  <img
+                    src={deal.image}
+                    alt={deal.name}
+                    className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  />
+                </div>
               )}
 
-              <h3 className="text-sm font-semibold">{deal.name}</h3>
-              <p className="text-xs text-gray-500 line-clamp-2">
-                {deal.description}
-              </p>
+              {/* Info */}
+              <div className="mt-3 space-y-1">
+                <h3 className="text-sm font-semibold line-clamp-1">
+                  {deal.name}
+                </h3>
 
-              {deal.rating && (
-                <p className="text-yellow-500 text-xs mt-1">
-                  {renderStars(deal.rating)}
+                <p className="text-xs text-gray-500 line-clamp-2">
+                  {deal.description}
                 </p>
-              )}
 
-              {deal.price && (
-                <p className="text-sm font-bold text-green-600 mt-2">
-                  ${deal.price.toFixed(2)}
+                {/* Rating */}
+                {deal.rating && (
+                  <div className="flex items-center gap-1 text-yellow-500 text-xs">
+                    <Star className="w-3 h-3 fill-yellow-400" />
+                    {renderStars(deal.rating)}
+                  </div>
+                )}
+
+                {/* Price */}
+                <p className="text-base font-bold text-emerald-600 mt-1">
+                  ${deal.price?.toFixed(2)}
                 </p>
-              )}
+              </div>
 
-              {/* ✅ Correct Add to Cart Button */}
+              {/* 🛒 Add to Cart */}
               <Button
-                className="mt-2 w-full"
+                className="mt-3 w-full flex items-center gap-2"
+                disabled={loadingId === deal.id}
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
+                  setLoadingId(deal.id);
+
                   addToCart({
                     id: deal.id,
                     name: deal.name,
                     price: deal.price || 0,
+                    image: deal.image || "",
                   });
+
+                  toast({
+                    title: "Added to cart 🛒",
+                    description: `${deal.name} is now in your cart`,
+                  });
+
+                  setTimeout(() => setLoadingId(null), 500);
                 }}
               >
-                Add to Cart
+                <ShoppingCart className="w-4 h-4" />
+                {loadingId === deal.id ? "Adding..." : "Add to Cart"}
               </Button>
-            </div>
+            </Link>
           ))}
         </div>
       ) : (
-        <div className="text-center text-gray-500 py-10">
-          Sorry, no deals match your search.
+        <div className="text-center py-12 text-gray-500">
+          No deals available right now 😔
         </div>
       )}
 
-      {/* Pagination Controls */}
-      {totalPages > 1 && visibleDeals.length > 0 && (
+      {/* Pagination */}
+      {totalPages > 1 && (
         <div className="flex justify-center items-center gap-2 mt-6">
           <Button
             variant="outline"

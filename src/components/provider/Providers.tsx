@@ -6,18 +6,26 @@ import { SearchProvider } from "@/context/SearchContext";
 // import { AuthProvider } from "@/context/auth/AuthContext";
 import { CartProvider } from "@/context/cart/CartContext";
 import { SessionProvider } from "next-auth/react";
+import { SessionMonitor } from "@/components/SessionMonitor";
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
       <SidebarProvider>
         <SidebarInset className="relative">
           <SearchProvider>
             {/* <AuthProvider> */}
+            
             <SessionProvider
-            refetchInterval={5 * 60} // Refetch session every 5 minutes
+              refetchInterval={5 * 60} // Refetch session every 5 minutes
               refetchOnWindowFocus={true} // Refetch when window regains focus
-              >
+            >
+              <SessionMonitor />
               <CartProvider>{children}</CartProvider>
             </SessionProvider>
             {/* </AuthProvider> */}

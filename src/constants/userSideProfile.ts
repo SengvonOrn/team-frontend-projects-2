@@ -66,25 +66,65 @@ export const topDealsData: Deal[] = [
   },
 ];
 
+export type TabType =
+  | "overview"
+  | "edit"
+  | "products"
+  | "payment"
+  | "settings"
+  | "location"
+  | "storedashboard";
 
+export const menuItems = [
+  {
+    id: "overview" as TabType,
+    label: "Overview",
+    icon: User,
+    description: "View your profile information",
+  },
+  {
+    id: "edit" as TabType,
+    label: "Edit Profile",
+    icon: Edit,
+    description: "Update your personal information",
+  },
+  {
+    id: "location" as TabType,
+    label: "set Location",
+    icon: IconLocation,
+    description: "Update your location information",
+  },
+  {
+    id: "payment" as TabType,
+    label: "Add Payments",
+    icon: Plus,
+    description: "Create and manage your payment",
+  },
+  {
+    id: "products" as TabType,
+    label: "Add Product",
+    icon: Plus,
+    description: "Create and manage your products",
+  },
+  {
+    id: "settings" as TabType,
+    label: "Settings",
+    icon: Settings,
+    description: "Account and privacy settings",
+  },
+  // {
+  //   id: "storedashboard" as TabType,
+  //   label: "storedashboard",
+  //   icon: Settings,
+  //   description: "Account and privacy storedashboard",
+  // },
+];
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-import { deals } from "@/types/deals";
+import { IconLocation } from "@tabler/icons-react";
 import Shoe from "../../public/slider/Shoe.jpg";
 import Three from "../../public/slider/Three.jpg";
 import Two from "../../public/slider/Two.jpg";
+import { Edit, Plus, Settings, User } from "lucide-react";
 
 export const slides2 = [
   {

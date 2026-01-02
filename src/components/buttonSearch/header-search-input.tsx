@@ -8,8 +8,6 @@ interface HeaderSearchInputProps
   className?: string;
 }
 
-
-
 export function HeaderSearchInput({
   className = "",
   ...props

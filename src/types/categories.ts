@@ -3,8 +3,6 @@ export interface categories {
       selectedCategories: string;
       onSelect: (category: string) => void;
 }
-
-
 export const category = [
   "All",
   "JavaScript",

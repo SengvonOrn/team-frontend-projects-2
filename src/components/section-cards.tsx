@@ -1,6 +1,5 @@
 "use client";
 import * as React from "react";
-import Autoplay from "embla-carousel-autoplay";
 import {
   Carousel,
   CarouselContent,
@@ -9,17 +8,15 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import Image from "next/image";
-import { slides2 } from "@/constants/data";
+import { slides2 } from "@/constants/userSideProfile";
 import {
   useFadeCarousel,
   useAutoplayCarousel,
 } from "@/hooks/use-Cartanimation";
-
 export function SectionCards() {
   // Right carousel (fade animation)
   const { activeIndex, goToSlide, handleMouseEnter, handleMouseLeave } =
     useFadeCarousel(slides2.length);
-
   // Left carousel (Embla with autoplay)
   const {
     autoplayPlugin,
