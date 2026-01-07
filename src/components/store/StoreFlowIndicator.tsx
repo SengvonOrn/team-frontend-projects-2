@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { getAvatarColor, getInitails } from "@/types/product";
 import { UserData } from "@/types/user";
+import Link from "next/link";
 
 interface StoreFlowIndicatorProps {
   userData?: UserData | null;
@@ -26,7 +27,9 @@ export const StoreFlowIndicator: React.FC<StoreFlowIndicatorProps> = ({
   onViewStore,
 }) => {
   const [isCreating, setIsCreating] = useState(false);
-  const hasStore = userData?.hasStore || false;
+
+  const hasStore = !!userData?.store?.id;
+
   const followerCount = userData?.followersCount || 0;
 
   const handleCreateStore = async () => {
@@ -42,7 +45,9 @@ export const StoreFlowIndicator: React.FC<StoreFlowIndicatorProps> = ({
 
   return (
     <div className="flex items-center gap-6 flex-wrap">
+      {/* =================================================== */}
       {/* Profile + Followers */}
+      {/* =================================================== */}
       <div
         className="relative group cursor-pointer"
         onClick={() => onViewFollowers?.()}
@@ -87,35 +92,58 @@ export const StoreFlowIndicator: React.FC<StoreFlowIndicatorProps> = ({
         </div>
       </div>
 
+      {/* ====================================== */}
       {/* Store Icon */}
-      <div
-        className="relative group cursor-pointer"
-        onClick={() => hasStore && onViewStore?.()}
-      >
-        <div
-          className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${
-            hasStore
-              ? "bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 group-hover:shadow-xl group-hover:shadow-green-500/40"
-              : "bg-gradient-to-br from-muted to-muted/50 border-2 border-dashed border-border group-hover:border-primary/50"
-          }`}
-        >
-          <Store
-            className={`w-7 h-7 ${
-              hasStore ? "text-white" : "text-muted-foreground"
-            }`}
-          />
-          {hasStore && (
+      {/* ====================================== */}
+
+      {/* ====================================== */}
+      {/* Store Icon */}
+      {/* ====================================== */}
+
+      {hasStore ? (
+        <Link href={`/store/${userData.id}`} className="relative group">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300
+        bg-gradient-to-br from-green-500 to-emerald-600
+        shadow-lg shadow-green-500/30
+        group-hover:shadow-xl group-hover:shadow-green-500/40"
+          >
+            <Store className="w-7 h-7 text-white" />
+
             <div className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-lg">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Tooltip */}
-        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg border border-border opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-50">
-          {hasStore ? "Store Active" : "No Store Yet"}
+          {/* Tooltip */}
+          <div
+            className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-3 py-1.5
+      bg-popover text-popover-foreground text-xs rounded-lg shadow-lg border border-border
+      opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50"
+          >
+            View Store
+          </div>
+        </Link>
+      ) : (
+        <div className="relative group cursor-not-allowed">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300
+        bg-gradient-to-br from-muted to-muted/50
+        border-2 border-dashed border-border group-hover:border-primary/50"
+          >
+            <Store className="w-7 h-7 text-muted-foreground" />
+          </div>
+
+          {/* Tooltip */}
+          <div
+            className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-3 py-1.5
+      bg-popover text-popover-foreground text-xs rounded-lg shadow-lg border border-border
+      opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50"
+          >
+            No Store Yet
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Create Store Button */}
       <Button

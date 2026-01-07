@@ -36,8 +36,8 @@ export const ProfileOverview: React.FC<ProfileOverviewProps> = ({
         .slice(0, 2) || "U"
     );
   };
-  const defaultLocation = userData.comments.find((loc) => loc.comment !== null);
 
+  const defaultLocation = userData.comments.find((loc) => loc.comment !== null);
   const getAvatarColor = (name: string) => {
     const colors = [
       "from-blue-500 to-purple-600",
@@ -95,10 +95,9 @@ export const ProfileOverview: React.FC<ProfileOverviewProps> = ({
                   </h2>
                   <p className="text-muted-foreground flex items-center gap-2 mt-1">
                     <Mail className="w-4 h-4" />
-                    {userData.id}
+                    {userData.email}
                   </p>
                 </div>
-
                 {/* Badges */}
                 <div className="flex flex-wrap gap-2">
                   {userData.role && (

@@ -51,8 +51,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   // STORE HANDLERS
   // ==============================
 
-
-
   const handleCreateStore = async (data: StoreFormData) => {
     try {
       console.log("Creating store with data:", data);
@@ -68,7 +66,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       };
       setCreatedStore(newStore);
       // Redirect to the store page after creation
-      router.push(`/store/${newStore.id}`);
+      // router.push(`/store/${newStore.id}`);
       alert("Store created successfully!");
     } catch (error) {
       console.error("Error creating store:", error);
@@ -76,10 +74,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       throw error;
     }
   };
-
-  
-
-
 
   // ==============================
   // PRODUCT HANDLERS
@@ -90,17 +84,22 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
       const newProduct: Product = {
         id: `prod_${Date.now()}`,
-        name: data.name,
-        description: data.description,
+        name: data.name || "",
+        description: data.description || "",
         price: data.price,
-        category: data.category,
-        stock: data.stock,
-        sku: data.sku,
-        image: data.images[0] ? URL.createObjectURL(data.images[0]) : undefined,
+        category: data.category || "",
+        rating: 0,
+        originalPrice: data.originalPrice || data.price,
+        reviews: 0,
+        image: data.images[0] ? URL.createObjectURL(data.images[0]) : "",
+        badge: null,
+        inStock: (data.stock || 0) > 0,
+        sku: data.sku || "",
+        stock: data.stock || 0,
+        sold: 0,
         status: "active",
         createdAt: new Date().toISOString(),
       };
-
       setProducts((prev) => [...prev, newProduct]);
       setStoreStats((prev) => ({
         ...prev,
@@ -135,11 +134,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   };
 
   const handleBulkDelete = (productIds: string[]) => {
-    setProducts((prev) => prev.filter((p) => !productIds.includes(p.id)));
+    setProducts((prev) =>
+      prev.filter((p) => !productIds.includes(p.id as string))
+    );
   };
 
   return (
-    <div className="min-h-screen mt-3 bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="mt-3 bg-gradient-to-br from-background via-background to-muted/20">
       <div className="sticky top-0 z-10 backdrop-blur-md bg-background/80 border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex justify-between items-center">
           {showBreadcrumb && (
@@ -147,6 +148,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               <Breadcrumb items={items} currentPath={currentPath} />
             </div>
           )}
+
           <StoreFlowIndicator
             userData={userData}
             onCreateStore={() => setIsCreateStoreOpen(true)}
@@ -154,7 +156,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+      <div className="py-6">
         {showUserInfo && userData && (
           <div className="mb-8 flex items-center gap-6">
             {/* Avatar */}
@@ -195,10 +197,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       </div>
 
       {/* MODALS */}
+
       <CreateStoreModal
         isOpen={isCreateStoreOpen}
         onClose={() => setIsCreateStoreOpen(false)}
-        onSubmit={handleCreateStore} // <-- match camelCase
+        onSuccess={handleCreateStore}
       />
     </div>
   );

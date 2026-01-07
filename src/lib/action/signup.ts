@@ -1,9 +1,8 @@
 // "use server";
 // import bcrypt from "bcryptjs";
 // import jwt from "jsonwebtoken";
-// import { db, User } from "@/lib/db";
+// import { User } from "next-auth";
 // const JWT_SECRET = process.env.JWT_SECRET!;
-
 // interface SignUpInput {
 //   email: string;
 //   password: string;
@@ -18,7 +17,6 @@
 //   message?: string;
 //   error?: any;
 // }
-
 // export const signUp = async ({
 //   email,
 //   password,

@@ -20,8 +20,11 @@ export default function UserProfilePage() {
   const { status, data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const { loading, saving, userData, load, update, resetFormData } =
     useUserProfile();
+
+    
   // Get tab from URL query parameter
   const tabFromUrl = searchParams.get("tab") as TabType | null;
   const [activeTab, setActiveTab] = useState<TabType>(tabFromUrl || "overview");
@@ -33,16 +36,12 @@ export default function UserProfilePage() {
     email: string;
     password: string;
     username: string;
-    // phone: string;
-    // address: string;
     businessLocation: LocationData;
   }>({
     name: "",
     email: "",
     password: "",
     username: "",
-    // phone: "",
-    // address: "",
     businessLocation: {
       latitude: null,
       longitude: null,
@@ -77,7 +76,6 @@ export default function UserProfilePage() {
 
   useEffect(() => {
     const baseFormData = resetFormData();
-
     setFormData({
       ...baseFormData,
       businessLocation: userData.locations?.[0] ?? {
@@ -116,29 +114,8 @@ export default function UserProfilePage() {
 
   //=====================================
   //
-  //=====================================
-
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   const fd = new FormData();
-  //   fd.append("name", formData.name);
-  //   fd.append("email", formData.email);
-  //   fd.append("username", formData.username);
-
-  //   if (avatarFile) {
-  //     fd.append("profile", avatarFile);
-  //   }
-  //   await update(formData);
-  //   // Clear file states
-  //   setAvatarFile(null);
-  //   setCoverFile(null);
-
-  //   setActiveTab("overview");
-  //   router.push("/profile?tab=overview", { scroll: false });
-  // };
-
   //==================================================
-  //
+  // userupdate
   //=================================================
 
   const handleSubmit = async (e: React.FormEvent) => {

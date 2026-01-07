@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -12,10 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Store, Sparkles } from "lucide-react";
-import { Backend_URL } from "@/constants/ConstantsUrl";
-import { useSession } from "next-auth/react";
-import { Toaster } from "../ui/toaster";
+import { Store, Sparkles, Loader2 } from "lucide-react";
+import { createStore, getStates } from "@/lib/action/stores";
 
 export interface StoreFormData {
   name: string;
@@ -28,16 +26,18 @@ export interface StoreFormData {
 interface CreateStoreModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (data: StoreFormData) => void | Promise<void>;
+  onSuccess?: (storeData: any) => void;
 }
 
 export const CreateStoreModal: React.FC<CreateStoreModalProps> = ({
   isOpen,
   onClose,
-  onSubmit,
+  onSuccess,
 }) => {
-  const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStates, setLoadingStates] = useState(false);
+  const [states, setStates] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<StoreFormData>({
     name: "",
     description: "",
@@ -45,39 +45,66 @@ export const CreateStoreModal: React.FC<CreateStoreModalProps> = ({
     city: "",
     state: "",
   });
-  const token = (session as any)?.backendTokens?.accessToken;
+
+  // Fetch states when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchStates();
+    }
+  }, [isOpen]);
+
+  const fetchStates = async () => {
+    setLoadingStates(true);
+    try {
+      const result = await getStates();
+      if (result.success && result.data) {
+        setStates(result.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch states:", error);
+    } finally {
+      setLoadingStates(false);
+    }
+  };
+
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (error) setError(null);
   };
 
-  //==================================================================
-  //
-  //==================================================================
-
   const handleSubmit = async () => {
-    if (!token) {
-      alert("You must be logged in to create a store");
+    if (!formData.name.trim()) {
+      setError("Store name is required");
       return;
     }
+
     setIsLoading(true);
+    setError(null);
+
     try {
-      const res = await fetch(`${Backend_URL}/api/stores`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
+      const result = await createStore({
+        name: formData.name.trim(),
+        description: formData.description?.trim() || undefined,
+        address: formData.address?.trim() || undefined,
+        city: formData.city?.trim() || undefined,
+        state: formData.state?.trim() || undefined,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        alert(
-          Array.isArray(data.message) ? data.message.join(", ") : data.message
+
+      if (!result.success) {
+        setError(
+          Array.isArray(result.message)
+            ? result.message.join(", ")
+            : result.message
         );
+        return;
       }
+
+      // Reset form
       setFormData({
         name: "",
         description: "",
@@ -86,21 +113,23 @@ export const CreateStoreModal: React.FC<CreateStoreModalProps> = ({
         state: "",
       });
 
+      // Call success callback
+      if (onSuccess) {
+        onSuccess(result.data);
+      }
+
+      // Close modal
       onClose();
-      if (onSubmit) await onSubmit(formData);
     } catch (error) {
       console.error("Error creating store:", error);
-      alert("Server error while creating store");
+      setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
   };
 
-  //=================================================================
-  //
-  //=================================================================
-
   const isFormValid = formData.name.trim();
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[520px]">
@@ -119,8 +148,16 @@ export const CreateStoreModal: React.FC<CreateStoreModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {error && (
+            <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
+
           <div className="space-y-2">
-            <Label htmlFor="name">Store Name *</Label>
+            <Label htmlFor="name">
+              Store Name <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="name"
               name="name"
@@ -128,6 +165,7 @@ export const CreateStoreModal: React.FC<CreateStoreModalProps> = ({
               onChange={handleInputChange}
               placeholder="e.g., My Awesome Store"
               disabled={isLoading}
+              required
             />
           </div>
 
@@ -171,26 +209,46 @@ export const CreateStoreModal: React.FC<CreateStoreModalProps> = ({
 
             <div className="space-y-2">
               <Label htmlFor="state">State</Label>
-              <Input
-                id="state"
-                name="state"
-                value={formData.state}
-                onChange={handleInputChange}
-                placeholder="State / Province"
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <select
+                  id="state"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleInputChange}
+                  disabled={isLoading || loadingStates}
+                  className="w-full px-3 py-2 border rounded-md bg-background"
+                >
+                  <option value="">Select a state</option>
+                  {states.map((state) => (
+                    <option key={state} value={state}>
+                      {state}
+                    </option>
+                  ))}
+                </select>
+                {loadingStates && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isLoading}
+            type="button"
+          >
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={isLoading || !isFormValid}
             className="bg-gradient-to-r from-primary to-primary/80"
+            type="button"
           >
             {isLoading ? (
               <>

@@ -19,6 +19,7 @@ export interface ProductFormData {
   name: string;
   description: string;
   price: number;
+  originalPrice: number;
   category: string;
   stock: number;
   sku: string;
@@ -42,6 +43,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     name: "",
     description: "",
     price: 0,
+    originalPrice: 0,
     category: "",
     stock: 0,
     sku: "",
@@ -57,10 +59,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       [name]: name === "price" || name === "stock" ? Number(value) : value,
     }));
   };
-
-
-
-  
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -90,13 +88,21 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     try {
       const newProduct: Product = {
         id: `prod_${Date.now()}`,
-        name: formData.name,
-        description: formData.description,
+        name: formData.name || "",
+        description: formData.description || "",
         price: formData.price,
-        category: formData.category,
-        stock: formData.stock,
-        sku: formData.sku,
-        image: imagePreviews[0],
+        category: formData.category || "",
+        rating: 0,
+        originalPrice: formData.originalPrice || formData.price,
+        reviews: 0,
+        image: formData.images[0]
+          ? URL.createObjectURL(formData.images[0])
+          : "",
+        badge: null,
+        inStock: (formData.stock || 0) > 0,
+        sku: formData.sku || "",
+        stock: formData.stock || 0,
+        sold: 0,
         status: "active",
         createdAt: new Date().toISOString(),
       };
@@ -108,11 +114,13 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
         name: "",
         description: "",
         price: 0,
+        originalPrice: 0,
         category: "",
         stock: 0,
         sku: "",
         images: [],
       });
+
       setImagePreviews([]);
       onClose();
     } catch (error) {

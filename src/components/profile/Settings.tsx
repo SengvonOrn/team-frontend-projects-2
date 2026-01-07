@@ -152,8 +152,8 @@ export const Settings = () => {
     try {
       await updatePassword(data);
       setPasswordSuccess(true);
-    } catch {
-      // error already handled by toast
+    } catch (error) {
+      alert(error);
     }
   };
   //===============================================================
@@ -282,6 +282,7 @@ export const Settings = () => {
                 )}
 
                 <PasswordForm onSubmit={handlePasswordSubmit} />
+                
               </div>
 
               <Separator />
@@ -321,6 +322,10 @@ export const Settings = () => {
             </CardContent>
           </div>
         )}
+
+
+
+
 
         {/* Notifications */}
         {activeSection === "notifications" && (

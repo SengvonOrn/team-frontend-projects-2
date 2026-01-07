@@ -214,3 +214,30 @@ export const authFormSchema = (type: string) =>
     email: z.string().email(),
     password: z.string().min(8),
   });
+
+
+
+ export const storeFormSchema = z.object({
+    name: z.string().min(2, "Store name must be at least 2 characters").max(100),
+    description: z.string().max(500).optional().or(z.literal("")),
+    address: z.string().max(200).optional().or(z.literal("")),
+    city: z.string().max(100).optional().or(z.literal("")),
+    state: z.string().max(100).optional().or(z.literal("")),
+    // country: z.string().max(100).optional().or(z.literal("")),
+    // postalCode: z.string().max(20).optional().or(z.literal("")),
+    // contactEmail: z
+    //   .string()
+    //   .email("Invalid email address")
+    //   .optional()
+    //   .or(z.literal("")),
+    // contactPhone: z.string().max(20).optional().or(z.literal("")),
+    // website: z.string().url("Invalid URL").optional().or(z.literal("")),
+    // isActive: z.boolean(),
+    // businessHours: z
+    //   .object({
+    //     open: z.string().optional().or(z.literal("")),
+    //     close: z.string().optional().or(z.literal("")),
+    //     days: z.array(z.string()).optional(),
+    //   })
+    //   .optional(),
+  });

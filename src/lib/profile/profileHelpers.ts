@@ -22,6 +22,7 @@ export const mapUserToState = (user: any): UserData => ({
   comments: user.comments ?? [],
   cartItems: user.cartItems ?? [],
   locations: user.locations ?? [],
+  store: user.store ?? [],
 });
 
 // ===============================

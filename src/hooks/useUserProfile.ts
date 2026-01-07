@@ -1,14 +1,14 @@
+// hooks/useUserProfile.ts
 import { useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/use-Toast";
 import { UserData } from "@/types/user";
-import {
-  fetchUserProfile,
-  updateUserPassword,
-  updateUserProfile,
-} from "@/lib/profile/profile";
+import { 
+  getUserProfile, 
+  updateUserProfile, 
+  updateUserPassword 
+} from "@/lib/action/profile"; // Updated import
 import { mapUserToState, resetFormData } from "@/lib/profile/profileHelpers";
-import { Backend_URL } from "@/constants/ConstantsUrl";
 import { EMPTY_USER } from "@/constants/emptyUser";
 
 export const useUserProfile = () => {
@@ -18,60 +18,58 @@ export const useUserProfile = () => {
   const [saving, setSaving] = useState(false);
   const [userData, setUserData] = useState<UserData>(EMPTY_USER);
 
-  // =======================================================
-  //  Acces Token callback
-  //========================================================
-  const getAccessToken = useCallback(() => {
-    const token = (session as any)?.backendTokens?.accessToken;
-    if (!token) {
-      toast({
-        title: "Error",
-        description: "No access token found. Please login again.",
-        variant: "destructive",
-      });
-      return null;
-    }
-    return token;
-  }, [session, toast]);
+  // ✅ REMOVED: getAccessToken - No longer needed!
+  // ✅ REMOVED: fetchUserProfile, updateUserProfile, updateUserPassword imports
 
   // ===============================
-  // callback data load
+  // Load user profile
   //================================
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const token = getAccessToken();
-      if (!token) return;
+      
+      // ✅ SIMPLIFIED: Direct Server Action call
+      const result = await getUserProfile();
+      
+      if (!result.success) {
+        handleError(new Error(result.message));
+        return;
+      }
 
-      const user = await fetchUserProfile(token);
-      const mappedUser = mapUserToState(user);
+
+
+      const mappedUser = mapUserToState(result.data);
       setUserData(mappedUser);
       return mappedUser;
+
+      
+
     } catch (error) {
       handleError(error);
     } finally {
       setLoading(false);
     }
-  }, [getAccessToken]);
+  }, []); // ✅ No dependencies needed!
 
   // ===============================
-  // User Update Data get props
+  // Update profile
   //================================
-
   const update = useCallback(
     async (formData: FormData) => {
       try {
         setSaving(true);
-        const token = getAccessToken();
-        if (!token) return;
-        //===============================
-        const updatedUser = await updateUserProfile(
-          token,
-          formData,
-          Backend_URL
-        );
-        const mappedUser = mapUserToState(updatedUser);
+        
+        // ✅ SIMPLIFIED: Direct Server Action call
+        const result = await updateUserProfile(formData);
+        
+        if (!result.success) {
+          handleError(new Error(result.message));
+          return;
+        }
+
+        const mappedUser = mapUserToState(result.data);
         setUserData(mappedUser);
+        
         toast({
           title: "Success",
           description: "Profile updated successfully",
@@ -84,12 +82,8 @@ export const useUserProfile = () => {
         setSaving(false);
       }
     },
-    [getAccessToken, toast]
+    [toast]
   );
-
-  //==============================
-  // Update password
-  //=============================
 
   // ===============================
   // Update password
@@ -101,36 +95,44 @@ export const useUserProfile = () => {
       confirmPassword: string;
     }) => {
       try {
-        const token = getAccessToken();
-        if (!token) return;
-
-        await updateUserPassword(token, data, Backend_URL);
+        // ✅ SIMPLIFIED: Direct Server Action call
+        const result = await updateUserPassword(data);
+        
+        if (!result.success) {
+          handleError(new Error(result.message));
+          throw new Error(result.message);
+        }
 
         toast({
           title: "Success",
           description: "Password updated successfully",
         });
+        
+        return result;
       } catch (error) {
         handleError(error);
-        throw error; // allow UI to react if needed
+        throw error;
       }
     },
-    [getAccessToken, toast]
+    [toast]
   );
 
   // ===============================
-  // Handler Error
+  // Handle Error
   //================================
   const handleError = (error: any) => {
     console.error("Profile error:", error);
+    
     const message = error instanceof Error ? error.message : "Operation failed";
-
+    
     if (message === "SESSION_EXPIRED") {
       toast({
         title: "Session expired",
         description: "Please sign in again.",
         variant: "destructive",
       });
+      // Optional: Trigger sign out
+      // signOut({ callbackUrl: '/login' });
       return;
     }
 
@@ -148,7 +150,7 @@ export const useUserProfile = () => {
     setUserData,
     load,
     update,
-    updatePassword, // ✅ add this
+    updatePassword,
     resetFormData: () => resetFormData(userData),
   };
 };

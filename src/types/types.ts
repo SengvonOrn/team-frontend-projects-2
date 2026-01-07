@@ -34,19 +34,19 @@ export  type SectionId =
 
   
 export interface Product {
-  id: string;
-  name: string;
+  id?: number | string; // Changed from string to number
+  name?: string;
   price: number;
-  originalPrice?: number;
-  inStock?: boolean;
-  category: string;
-  rating?: number;
+  originalPrice: number;
+  category?: string;
+  rating: number;
   reviews?: number;
-  description: string;
+  description?: string;
   image?: string;
   badge?: string | null;
+  inStock?: boolean;
   sku?: string;
-  stock: number;
+  stock?: number;
   sold?: number;
   status?: "active" | "draft" | "out_of_stock";
   createdAt: string;

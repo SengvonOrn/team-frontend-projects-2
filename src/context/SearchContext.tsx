@@ -6,9 +6,7 @@ interface SearchContextType {
   categories: string;
   setCategories: React.Dispatch<React.SetStateAction<string>>;
 }
-
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
-
 export const SearchProvider = ({ children }: { children: ReactNode }) => {
   // first context
 

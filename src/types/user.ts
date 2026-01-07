@@ -1,3 +1,5 @@
+import { IStore } from "./store";
+
 export type LocationData = {
   id?: string | number;
   latitude: number | null;
@@ -7,7 +9,6 @@ export type LocationData = {
   country: string;
   isDefault?: boolean; // ✅ add this
 };
-
 
 export type ProfileImage = {
   id: number;
@@ -46,9 +47,6 @@ export type CartItem = {
   quantity?: number;
 };
 
-
-
-
 export type UserData = {
   id: string;
   name: string;
@@ -58,20 +56,16 @@ export type UserData = {
   role: string;
   status: string;
   hasStore: boolean;
-  followersCount: number
+  followersCount: number;
   createdAt: string;
   updatedAt: string;
-
   profileImage: ProfileImage | null;
   customers: Customer[];
   comments: Comment[];
   cartItems: CartItem[];
   locations: LocationData[];
+  store?: IStore | null;
 };
-
-
-
-
 
 // For login request
 export type LoginRequest = {
@@ -99,7 +93,6 @@ export type ApiResponse<T> = {
   data: T;
   message?: string;
 };
-
 export type AccountTypes =
   | "depository"
   | "credit"
