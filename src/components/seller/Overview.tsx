@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/utils/utils";
-import { Product } from "@/types/types";
+import { Product } from "@/types/addProducts";
 
 interface OverviewPageProps {
   products: Product[];
@@ -117,11 +117,39 @@ const RecentOrder = ({
 };
 
 export default function OverviewPage({ products }: OverviewPageProps) {
+  // ✅ HELPER: Get price from variant
+  const getProductPrice = (product: Product): number => {
+    if (product.variants && product.variants.length > 0) {
+      return product.variants[0].price;
+    }
+    return 0;
+  };
+
+  // ✅ HELPER: Get main image
+  const getMainImage = (product: Product): string => {
+    const mainImage = product.images?.find((img) => img.imageType === "MAIN");
+    return (
+      mainImage?.imageUrl || product.images?.[0]?.imageUrl || "/placeholder.jpg"
+    );
+  };
+
+  // ✅ Calculate stats from actual products
+  const totalRevenue = products.reduce((sum, p) => {
+    const price = getProductPrice(p);
+    // Estimate based on variants sold (you can adjust this based on your data)
+    return sum + price * (p.variants[0]?.inventory?.quantityInStock || 0) * 0.1;
+  }, 0);
+
   const storeStats = {
     totalProducts: products.length,
-    totalRevenue: 12540.5,
-    totalSold: products.reduce((sum, p) => sum + (p.sold || 0), 0),
-    avgRating: 4.7,
+    totalRevenue: totalRevenue,
+    activeProducts: products.filter((p) => p.status?.toUpperCase() === "ACTIVE")
+      .length,
+    draftProducts: products.filter((p) => p.status?.toUpperCase() === "DRAFT")
+      .length,
+    outOfStockProducts: products.filter(
+      (p) => p.status?.toUpperCase() === "OUT_OF_STOCK"
+    ).length,
     totalOrders: 1279,
     activeCustomers: 856,
   };
@@ -157,18 +185,36 @@ export default function OverviewPage({ products }: OverviewPageProps) {
     },
   ];
 
-  const categoryPerformance = [
-    { name: "Electronics", sales: 3450, percentage: 35 },
-    { name: "Fashion", sales: 2780, percentage: 28 },
-    { name: "Home & Garden", sales: 2180, percentage: 22 },
-    { name: "Sports", sales: 1490, percentage: 15 },
-  ];
+  // ✅ Calculate category performance from products
+  const categoryPerformance = products
+    .reduce((acc, product) => {
+      const existingCategory = acc.find((c) => c.name === product.category);
+      const price = getProductPrice(product);
+
+      if (existingCategory) {
+        existingCategory.sales += price;
+        existingCategory.count += 1;
+      } else {
+        acc.push({
+          name: product.category || "Uncategorized",
+          sales: price,
+          count: 1,
+        });
+      }
+      return acc;
+    }, [] as Array<{ name: string; sales: number; count: number }>)
+    .map((cat) => ({
+      ...cat,
+      percentage: Math.round(
+        (cat.sales / products.reduce((sum, p) => sum + getProductPrice(p), 0)) *
+          100
+      ),
+    }))
+    .sort((a, b) => b.sales - a.sales);
 
   return (
     <div className="space-y-6">
-      {/* ======================================= */}
       {/* Header */}
-      {/* ======================================= */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
@@ -183,9 +229,7 @@ export default function OverviewPage({ products }: OverviewPageProps) {
         </div>
       </div>
 
-      {/* ======================================= */}
       {/* Stats Grid */}
-      {/* ======================================= */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           icon={Package}
@@ -198,7 +242,9 @@ export default function OverviewPage({ products }: OverviewPageProps) {
         <StatCard
           icon={DollarSign}
           label="Total Revenue"
-          value={`$${storeStats.totalRevenue.toLocaleString()}`}
+          value={`$${storeStats.totalRevenue.toLocaleString("en-US", {
+            maximumFractionDigits: 0,
+          })}`}
           change="23.5%"
           changeType="increase"
           color="from-green-500 to-green-600"
@@ -221,9 +267,7 @@ export default function OverviewPage({ products }: OverviewPageProps) {
         />
       </div>
 
-      {/* =================================================== */}
       {/* Main Content Grid */}
-      {/* =================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Sales Chart */}
         <Card className="lg:col-span-2">
@@ -289,14 +333,15 @@ export default function OverviewPage({ products }: OverviewPageProps) {
                 <Package className="w-5 h-5 opacity-80" />
               </div>
               <p className="text-3xl font-bold mb-1">
-                {products.filter((p) => p.status === "active").length}
+                {storeStats.activeProducts}
               </p>
               <p className="text-xs opacity-75">
-                {(
-                  (products.filter((p) => p.status === "active").length /
-                    products.length) *
-                  100
-                ).toFixed(0)}
+                {storeStats.totalProducts > 0
+                  ? Math.round(
+                      (storeStats.activeProducts / storeStats.totalProducts) *
+                        100
+                    )
+                  : 0}
                 % of total
               </p>
             </CardContent>
@@ -309,7 +354,7 @@ export default function OverviewPage({ products }: OverviewPageProps) {
                 <Package className="w-5 h-5 opacity-80" />
               </div>
               <p className="text-3xl font-bold mb-1">
-                {products.filter((p) => p.status === "out_of_stock").length}
+                {storeStats.outOfStockProducts}
               </p>
               <p className="text-xs opacity-75">Needs restocking</p>
             </CardContent>
@@ -322,7 +367,7 @@ export default function OverviewPage({ products }: OverviewPageProps) {
                 <Package className="w-5 h-5 opacity-80" />
               </div>
               <p className="text-3xl font-bold mb-1">
-                {products.filter((p) => p.status === "draft").length}
+                {storeStats.draftProducts}
               </p>
               <p className="text-xs opacity-75">Ready to publish</p>
             </CardContent>
@@ -330,9 +375,7 @@ export default function OverviewPage({ products }: OverviewPageProps) {
         </div>
       </div>
 
-      {/* ================================================ */}
       {/* Bottom Grid */}
-      {/* =============================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Products */}
         <Card>
@@ -350,39 +393,51 @@ export default function OverviewPage({ products }: OverviewPageProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {products.slice(0, 4).map((product) => (
-                <div
-                  key={product.id}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition"
-                >
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-12 h-12 rounded-lg object-cover"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">
-                      {product.name}
-                    </p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>${product.price}</span>
-                      <span>•</span>
-                      <span>{product.sold} sold</span>
+              {products.slice(0, 4).map((product) => {
+                const price = getProductPrice(product);
+                const mainImage = getMainImage(product);
+                const stock =
+                  product.variants[0]?.inventory?.quantityInStock || 0;
+
+                return (
+                  <div
+                    key={product.id}
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition"
+                  >
+                    <img
+                      src={mainImage}
+                      alt={product.name}
+                      className="w-12 h-12 rounded-lg object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm truncate">
+                        {product.name}
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>${price.toFixed(2)}</span>
+                        <span>•</span>
+                        <span>{stock} in stock</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-sm">
+                        ${(price * stock * 0.1).toFixed(0)}
+                      </p>
+                      <div className="flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <span className="text-xs text-muted-foreground">
+                          {(
+                            product.reviews?.reduce(
+                              (sum, r) => sum + r.rating,
+                              0
+                            ) / (product.reviews?.length || 1) || 0
+                          ).toFixed(1)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-sm">
-                      ${(product.price * (product.sold || 0)).toFixed(0)}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                      <span className="text-xs text-muted-foreground">
-                        {product.rating}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -411,10 +466,7 @@ export default function OverviewPage({ products }: OverviewPageProps) {
         </Card>
       </div>
 
-      {/* =============================================== */}
       {/* Category Performance */}
-      {/* =============================================== */}
-
       <Card>
         <CardHeader>
           <CardTitle>Category Performance</CardTitle>
@@ -424,24 +476,38 @@ export default function OverviewPage({ products }: OverviewPageProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {categoryPerformance.map((category) => (
-              <div key={category.name}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <span className="font-semibold text-sm">
-                      {category.name}
+            {categoryPerformance.length > 0 ? (
+              categoryPerformance.map((category) => (
+                <div key={category.name}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-sm">
+                        {category.name}
+                      </span>
+                      <Badge variant="secondary" className="text-xs">
+                        {category.percentage}%
+                      </Badge>
+                    </div>
+                    <span className="text-sm font-bold">
+                      $
+                      {category.sales.toLocaleString("en-US", {
+                        maximumFractionDigits: 0,
+                      })}
                     </span>
-                    <Badge variant="secondary" className="text-xs">
-                      {category.percentage}%
-                    </Badge>
                   </div>
-                  <span className="text-sm font-bold">
-                    ${category.sales.toLocaleString()}
-                  </span>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div
+                      className="bg-primary rounded-full h-2 transition-all"
+                      style={{ width: `${category.percentage}%` }}
+                    />
+                  </div>
                 </div>
-                {/* <Progress value={category.percentage} className="h-2" /> */}
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-muted-foreground text-center py-8">
+                No products yet
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

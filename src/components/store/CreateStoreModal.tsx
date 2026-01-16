@@ -1,5 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -9,49 +12,97 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Store, Sparkles, Loader2 } from "lucide-react";
-import { createStore, getStates } from "@/lib/action/stores";
+import { createStore, getStates, updateStore } from "@/lib/action/stores";
+import { IStore } from "@/types/store";
+import { useToast } from "@/components/ui/use-toast";
 
-export interface StoreFormData {
-  name: string;
-  description?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-}
+// Zod schema for validation
+export const storeFormSchema = z.object({
+  name: z.string().min(1, "Store name is required").max(100, "Store name is too long"),
+  description: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+});
+
+type StoreFormValues = z.infer<typeof storeFormSchema>;
 
 interface CreateStoreModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (storeData: any) => void;
+  store?: IStore | null;
+  isEditing?: boolean;
 }
 
 export const CreateStoreModal: React.FC<CreateStoreModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  store,
+  isEditing = false,
 }) => {
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStates, setLoadingStates] = useState(false);
   const [states, setStates] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<StoreFormData>({
-    name: "",
-    description: "",
-    address: "",
-    city: "",
-    state: "",
+
+  // Initialize form with react-hook-form and zod
+  const form = useForm<StoreFormValues>({
+    resolver: zodResolver(storeFormSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      address: "",
+      city: "",
+      state: "",
+    },
   });
 
   // Fetch states when modal opens
   useEffect(() => {
     if (isOpen) {
       fetchStates();
+      
+      // Populate form with store data if editing
+      if (isEditing && store) {
+        form.reset({
+          name: store.name || "",
+          description: store.description || "",
+          address: store.address || "",
+          city: store.city || "",
+          state: store.state || "",
+        });
+      } else {
+        // Reset form for create mode
+        form.reset({
+          name: "",
+          description: "",
+          address: "",
+          city: "",
+          state: "",
+        });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, isEditing, store, form]);
 
   const fetchStates = async () => {
     setLoadingStates(true);
@@ -67,50 +118,61 @@ export const CreateStoreModal: React.FC<CreateStoreModalProps> = ({
     }
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (error) setError(null);
-  };
-
-  const handleSubmit = async () => {
-    if (!formData.name.trim()) {
-      setError("Store name is required");
-      return;
-    }
-
+  const onSubmit = async (values: StoreFormValues) => {
     setIsLoading(true);
-    setError(null);
 
     try {
-      const result = await createStore({
-        name: formData.name.trim(),
-        description: formData.description?.trim() || undefined,
-        address: formData.address?.trim() || undefined,
-        city: formData.city?.trim() || undefined,
-        state: formData.state?.trim() || undefined,
-      });
+      let result;
+
+      if (isEditing && store?.id) {
+        // UPDATE: Use FormData for PATCH request
+        const formData = new FormData();
+        formData.append('name', values.name.trim());
+        
+        if (values.description?.trim()) {
+          formData.append('description', values.description.trim());
+        }
+        if (values.address?.trim()) {
+          formData.append('address', values.address.trim());
+        }
+        if (values.city?.trim()) {
+          formData.append('city', values.city.trim());
+        }
+        if (values.state?.trim()) {
+          formData.append('state', values.state.trim());
+        }
+        
+        result = await updateStore(store.id, formData);
+      } else {
+        // CREATE: Use plain object for POST request
+        const storeData = {
+          name: values.name.trim(),
+          description: values.description?.trim() || undefined,
+          address: values.address?.trim() || undefined,
+          city: values.city?.trim() || undefined,
+          state: values.state?.trim() || undefined,
+        };
+        
+        result = await createStore(storeData);
+      }
 
       if (!result.success) {
-        setError(
-          Array.isArray(result.message)
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: Array.isArray(result.message)
             ? result.message.join(", ")
-            : result.message
-        );
+            : result.message,
+        });
         return;
       }
 
-      // Reset form
-      setFormData({
-        name: "",
-        description: "",
-        address: "",
-        city: "",
-        state: "",
+      // Success
+      toast({
+        title: "Success",
+        description: isEditing 
+          ? "Store updated successfully" 
+          : "Store created successfully",
       });
 
       // Call success callback
@@ -120,18 +182,34 @@ export const CreateStoreModal: React.FC<CreateStoreModalProps> = ({
 
       // Close modal
       onClose();
+      
+      // Reset form
+      form.reset();
     } catch (error) {
-      console.error("Error creating store:", error);
-      setError("An unexpected error occurred");
+      console.error("Error processing store:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const isFormValid = formData.name.trim();
+  const handleClose = () => {
+    form.reset();
+    onClose();
+  };
+
+  const title = isEditing ? "Edit Store" : "Create New Store";
+  const description = isEditing
+    ? "Update your store information"
+    : "Enter basic information about your store";
+  const buttonText = isEditing ? "Update Store" : "Create Store";
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
@@ -139,130 +217,157 @@ export const CreateStoreModal: React.FC<CreateStoreModalProps> = ({
               <Store className="w-6 h-6 text-white" />
             </div>
             <div>
-              <DialogTitle className="text-2xl">Create New Store</DialogTitle>
+              <DialogTitle className="text-2xl">{title}</DialogTitle>
               <DialogDescription className="mt-1">
-                Enter basic information about your store
+                {description}
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {error && (
-            <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="name">
-              Store Name <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="name"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            {/* Store Name */}
+            <FormField
+              control={form.control}
               name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              placeholder="e.g., My Awesome Store"
-              disabled={isLoading}
-              required
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Store Name <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., My Awesome Store"
+                      disabled={isLoading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
+            {/* Description */}
+            <FormField
+              control={form.control}
               name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              placeholder="Tell customers about your store..."
-              className="min-h-[90px] resize-none"
-              disabled={isLoading}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Tell customers about your store..."
+                      className="min-h-[90px] resize-none"
+                      disabled={isLoading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
-            <Input
-              id="address"
+            {/* Address */}
+            <FormField
+              control={form.control}
               name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              placeholder="Street, building, etc."
-              disabled={isLoading}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Street, building, etc."
+                      disabled={isLoading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
+            {/* City and State */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* City */}
+              <FormField
+                control={form.control}
                 name="city"
-                value={formData.city}
-                onChange={handleInputChange}
-                placeholder="City"
-                disabled={isLoading}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>City</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="City"
+                        disabled={isLoading}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* State */}
+              <FormField
+                control={form.control}
+                name="state"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>State</FormLabel>
+                    <Select
+                      disabled={isLoading || loadingStates}
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a state" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {states.map((state) => (
+                          <SelectItem key={state} value={state}>
+                            {state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="state">State</Label>
-              <div className="relative">
-                <select
-                  id="state"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleInputChange}
-                  disabled={isLoading || loadingStates}
-                  className="w-full px-3 py-2 border rounded-md bg-background"
-                >
-                  <option value="">Select a state</option>
-                  {states.map((state) => (
-                    <option key={state} value={state}>
-                      {state}
-                    </option>
-                  ))}
-                </select>
-                {loadingStates && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  </div>
+            <DialogFooter className="gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="bg-gradient-to-r from-primary to-primary/80"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {isEditing ? "Updating..." : "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    {buttonText}
+                  </>
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isLoading}
-            type="button"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isLoading || !isFormValid}
-            className="bg-gradient-to-r from-primary to-primary/80"
-            type="button"
-          >
-            {isLoading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4 mr-2" />
-                Create Store
-              </>
-            )}
-          </Button>
-        </DialogFooter>
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

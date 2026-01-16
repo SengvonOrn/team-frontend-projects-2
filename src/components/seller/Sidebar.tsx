@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/utils/utils";
 import { IStore } from "@/types/store";
+import { Product } from "@/types/addProducts";
 
 interface UserProfile {
   id: string;
@@ -27,7 +28,7 @@ interface Props {
   setActiveTab: (tab: any) => void;
   sidebarOpen: boolean;
   setSidebarOpen: (v: boolean) => void;
-  products: any[];
+  products: Product[];
   currentStore?: IStore | null;
   userProfile?: UserProfile | null;
   isLoading?: boolean;
@@ -45,6 +46,21 @@ export default function Sidebar({
   isLoading = false,
   error = null,
 }: Props) {
+  //===================================
+  //
+  //==================================
+  const logo = currentStore?.images?.find(
+    (img) => img.imageType === "LOGO"
+  )?.imageUrl;
+  const banner = currentStore?.images?.find(
+    (img) => img.imageType === "BANNER"
+  )?.imageUrl;
+
+  //===================================
+  //
+  //==================================
+
+  // Loading state
   if (isLoading) {
     return (
       <>
@@ -56,10 +72,10 @@ export default function Sidebar({
         >
           <div className="sticky top-0 z-10 p-6 border-b">
             <div className="animate-pulse space-y-4">
-              <div className="h-8 bg-muted rounded w-3/4"></div>
+              <div className="h-8 bg-muted rounded w-3/4">Hello</div>
               <div className="h-4 bg-muted rounded w-1/2"></div>
             </div>
-          </div>
+          </div>  
         </aside>
         {sidebarOpen && (
           <div
@@ -70,6 +86,8 @@ export default function Sidebar({
       </>
     );
   }
+
+  // Error state
   if (error) {
     return (
       <>
@@ -131,13 +149,13 @@ export default function Sidebar({
     },
     {
       label: "Out of Stock",
-      count: products.filter((p) => p.status === "out-of-stock").length,
+      count: products.filter((p) => p.status === "out_of_stock").length,
       color: "bg-red-500 dark:bg-red-600",
     },
   ];
 
   // Get initials for avatar fallback
-  const getUserInitials = (name: string) => {
+  const getUserInitials = (name: string): string => {
     return name
       .split(" ")
       .map((n) => n[0])
@@ -146,7 +164,7 @@ export default function Sidebar({
       .slice(0, 2);
   };
 
-  const getStoreInitials = (name: string) => {
+  const getStoreInitials = (name: string): string => {
     return name
       .split(" ")
       .map((n) => n[0])
@@ -156,7 +174,7 @@ export default function Sidebar({
   };
 
   // Helper to format currency
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
@@ -164,8 +182,6 @@ export default function Sidebar({
       maximumFractionDigits: 0,
     }).format(amount);
   };
-
-  // ✅ No need for firstStore extraction - currentStore is already single
 
   return (
     <>
@@ -190,23 +206,20 @@ export default function Sidebar({
             </div>
           </div>
 
+          {/* ====================================================================================================== */}
+
           {/* Store Profile Section */}
-          {currentStore && ( // ✅ Use currentStore directly
+          {/* ====================================================================================================== */}
+          {currentStore && (
             <div className="p-3 bg-muted/50 rounded-lg border mb-4">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                 Current Store
               </p>
               <div className="flex items-center gap-2 mb-2">
-                {currentStore.createdAt ? ( // ✅ Use logo from IStore
+                {currentStore.name ? (
                   <img
-                    src={currentStore.createdAt}
-                    alt={currentStore.createdAt}
-                    className="w-8 h-8 rounded-lg object-cover"
-                  />
-                ) : currentStore.address ? ( // Fallback to address if logo doesn't exist
-                  <img
-                    src={currentStore.address}
-                    alt={currentStore.name}
+                    src={logo}
+                    alt={currentStore.name || "Store"}
                     className="w-8 h-8 rounded-lg object-cover"
                   />
                 ) : (
@@ -216,17 +229,21 @@ export default function Sidebar({
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate">
-                    {currentStore.name}
+                    {currentStore.name || "Unnamed Store"}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {products.length} products
-                  </p>
+                  {currentStore.description && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {currentStore.description}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
           )}
 
+          {/* ====================================================================== */}
           {/* User Profile */}
+          {/* ====================================================================== */}
           {userProfile && (
             <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border">
               <Avatar className="w-10 h-10">
@@ -251,8 +268,9 @@ export default function Sidebar({
             </div>
           )}
         </div>
-
+        {/* ======================================================================== */}
         {/* Navigation - Scrollable */}
+        {/* ======================================================================== */}
         <nav className="flex-1 overflow-y-auto custom-scrollbar">
           <div className="p-4">
             <div className="space-y-1">
@@ -332,7 +350,9 @@ export default function Sidebar({
           </div>
         </nav>
 
+        {/* ======================================================================== */}
         {/* Bottom Section - Sticky */}
+        {/* ======================================================================== */}
         <div className="z-10 p-4 border-t space-y-3 bg-gradient-to-t from-background via-background to-transparent">
           {/* Store Stats */}
           {currentStore && (
@@ -343,14 +363,16 @@ export default function Sidebar({
                   <span className="text-muted-foreground">Products:</span>
                   <span className="font-semibold">{products.length}</span>
                 </div>
+                {/* Uncomment when totalRevenue is available in IStore type
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Revenue:</span>
-                  {/* <span className="font-semibold">
+                  <span className="font-semibold">
                     {currentStore.totalRevenue ? 
                       formatCurrency(currentStore.totalRevenue) : 
                       "$0"}
-                  </span> */}
-                </div>
+                  </span>
+                </div> */}
+
                 {currentStore.address && (
                   <div className="flex justify-between pt-1 border-t">
                     <span className="text-muted-foreground">Location:</span>

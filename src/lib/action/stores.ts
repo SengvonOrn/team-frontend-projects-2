@@ -62,7 +62,6 @@ export async function createStore(storeData: {
         state: state?.trim() || null,
       }),
     });
-
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       return {
@@ -172,7 +171,10 @@ export async function getAllStores(options?: {
   }
 }
 
-// Get my stores (stores for current user)
+//=======================================================================
+//
+//=======================================================================
+
 export async function getMyStores(options?: {
   page?: number;
   limit?: number;
@@ -198,19 +200,6 @@ export async function getMyStores(options?: {
       };
     }
 
-    const { page = 1, limit = 10, search = "" } = options || {};
-
-    // Build query string
-    const queryParams = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-    });
-
-    if (search) {
-      queryParams.append("search", search);
-    }
-
-    // Endpoint: GET /stores/my-stores?page=1&limit=10&search=...
     const response = await fetch(`${Backend_URL}/api/stores/my-stores`, {
       method: "GET",
       headers: {
@@ -229,12 +218,12 @@ export async function getMyStores(options?: {
       };
     }
 
-    const data = await response.json();
+    const apiResponse = await response.json();
 
     return {
       success: true,
       message: "Your stores retrieved successfully",
-      data,
+      data: apiResponse.data,
       status: 200,
     };
   } catch (error) {
@@ -247,6 +236,8 @@ export async function getMyStores(options?: {
     };
   }
 }
+//=======================================================================
+//=======================================================================
 
 // Search stores
 export async function searchStores(
@@ -526,42 +517,26 @@ export async function getStates() {
 //========================================================
 // Update store
 //=========================================================
-export async function updateStore(
-  id: string,
-  storeData: {
-    name?: string;
-    description?: string;
-    address?: string;
-    city?: string;
-    state?: string;
-  }
-) {
+// lib/action/stores.ts
+export async function updateStore(id: string, formData: FormData) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return {
-        success: false,
-        message: "Unauthorized",
-        status: 401,
-      };
+      return { success: false, message: "Unauthorized", status: 401 };
     }
 
     const token = await getTokenFromSession();
     if (!token) {
-      return {
-        success: false,
-        message: "No access token available",
-        status: 401,
-      };
+      return { success: false, message: "No access token", status: 401 };
     }
-    // Endpoint: PATCH /stores/:id
+
     const response = await fetch(`${Backend_URL}/api/stores/${id}`, {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+        // DO NOT set Content-Type for FormData
       },
-      body: JSON.stringify(storeData),
+      body: formData,
     });
 
     if (!response.ok) {
@@ -574,7 +549,6 @@ export async function updateStore(
     }
 
     const data = await response.json();
-
     return {
       success: true,
       message: "Store updated successfully",

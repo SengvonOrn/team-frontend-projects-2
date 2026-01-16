@@ -7,11 +7,11 @@ import { BreadcrumbItem } from "@/lib/breakcrumb/navigationBreadcrumb";
 import { ProductsHeader } from "@/components/products/ProductsHeader";
 import { ActiveFiltersBanner } from "@/components/products/ActiveFiltersBanner";
 import { ProductFilters } from "@/components/products/ProductFilters";
-import { ProductCard } from "@/components/products/ProductCard";
 import { EmptyProductsState } from "@/components/products/EmptyProductsState";
 import { useProductFilters } from "@/hooks/useProductFilters";
 import { filterAndSortProducts } from "@/lib/product/productUtils";
 import { ViewMode, SortOption } from "@/types/product";
+import { ProductCard } from "@/components/products/ProductCard";
 
 export default function ProductsPage() {
   const router = useRouter();

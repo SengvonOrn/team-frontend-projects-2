@@ -9,6 +9,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+//--------------date forMamate----------------------------
+
 export const formmatDateTime = (dateString: Date) => {
   const dateTimeOptions: Intl.DateTimeFormatOptions = {
     weekday: "short", // abbreviated weekday name (e.g., 'Mon')
@@ -215,29 +217,87 @@ export const authFormSchema = (type: string) =>
     password: z.string().min(8),
   });
 
+//============================store===================================|
 
+export const storeFormSchema = z.object({
+  name: z.string().min(2, "Store name must be at least 2 characters").max(100),
+  description: z.string().max(500).optional().or(z.literal("")),
+  address: z.string().max(200).optional().or(z.literal("")),
+  city: z.string().max(100).optional().or(z.literal("")),
+  state: z.string().max(100).optional().or(z.literal("")),
 
- export const storeFormSchema = z.object({
-    name: z.string().min(2, "Store name must be at least 2 characters").max(100),
-    description: z.string().max(500).optional().or(z.literal("")),
-    address: z.string().max(200).optional().or(z.literal("")),
-    city: z.string().max(100).optional().or(z.literal("")),
-    state: z.string().max(100).optional().or(z.literal("")),
-    // country: z.string().max(100).optional().or(z.literal("")),
-    // postalCode: z.string().max(20).optional().or(z.literal("")),
-    // contactEmail: z
-    //   .string()
-    //   .email("Invalid email address")
-    //   .optional()
-    //   .or(z.literal("")),
-    // contactPhone: z.string().max(20).optional().or(z.literal("")),
-    // website: z.string().url("Invalid URL").optional().or(z.literal("")),
-    // isActive: z.boolean(),
-    // businessHours: z
-    //   .object({
-    //     open: z.string().optional().or(z.literal("")),
-    //     close: z.string().optional().or(z.literal("")),
-    //     days: z.array(z.string()).optional(),
-    //   })
-    //   .optional(),
-  });
+  // Images
+  logo: z
+    .instanceof(File)
+    .optional()
+    .refine((file) => !file || file.size <= 10 * 1024 * 1024, {
+      message: "Logo must be less than 10MB",
+    })
+    .refine(
+      (file) => !file || ["image/jpeg", "image/png"].includes(file.type),
+      {
+        message: "Logo must be a PNG or JPG image",
+      }
+    ),
+
+  banner: z
+    .instanceof(File)
+    .optional()
+    .refine((file) => !file || file.size <= 10 * 1024 * 1024, {
+      message: "Banner must be less than 10MB",
+    })
+    .refine(
+      (file) => !file || ["image/jpeg", "image/png"].includes(file.type),
+      {
+        message: "Banner must be a PNG or JPG image",
+      }
+    ),
+});
+
+// ✅ CLEAN SCHEMA - Status is REQUIRED, not optional
+// ================= FIXED PRODUCT FORM SCHEMA =================
+export const productFormSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").max(200),
+  description: z
+    .string()
+    .min(10, "Description must be at least 10 characters")
+    .max(5000)
+    .optional(),
+  category: z.string().min(1, "Category is required").max(100).optional(),
+  slug: z
+    .string()
+    .min(1, "Slug is required")
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase with hyphens"),
+
+  price: z.preprocess((val) => {
+    if (val === "" || val === undefined || val === null) return undefined;
+    const num = Number(val);
+    return isNaN(num) ? undefined : num;
+  }, z.number({ error: "Price is required" }).min(0.01, "Price must be greater than 0").max(999999.99, "Price is too high")),
+
+  compareAtPrice: z.preprocess((val) => {
+    if (val === "" || val === undefined || val === null) return undefined;
+    const num = Number(val);
+    return isNaN(num) ? undefined : num;
+  }, z.number({ error: "Compare price must be a number" }).min(0, "Compare price must be 0 or greater").optional().nullable()),
+
+  stock: z.preprocess((val) => {
+    if (val === "" || val === undefined || val === null) return 0;
+    const num = Number(val);
+    return isNaN(num) ? 0 : Math.floor(num);
+  }, z.number({ error: "Stock must be a number" }).int("Stock must be a whole number").min(0, "Stock cannot be negative")),
+
+  status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED", "OUT_OF_STOCK"], {
+    error: "Please select a valid status",
+  }),
+
+  brand: z
+    .string()
+    .max(100, "Brand name is too long")
+    .optional()
+    .or(z.literal("")),
+
+  sku: z.string().max(100, "SKU is too long").optional().or(z.literal("")),
+});
+
+export type ProductFormData = z.infer<typeof productFormSchema>;

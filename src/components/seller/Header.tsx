@@ -46,11 +46,16 @@ export default function Header({
         </div>
 
         {/* Add Product Button */}
+
+        
         <Button onClick={onAddProduct} className="gap-2 shadow-lg">
           <Plus className="w-5 h-5" />
           <span className="hidden sm:inline">Add Product</span>
         </Button>
       </div>
+
+
+
 
       {/* Mobile Search */}
       <div className="md:hidden px-6 pb-4">

@@ -1,4 +1,5 @@
-import { Product, ProductFilters, SortOption } from "@/types/product";
+import { ProductFilters, SortOption } from "@/types/product";
+import { Product } from "@/types/types";
 
 export function filterAndSortProducts(
   products: Product[],
@@ -37,7 +38,7 @@ export function filterAndSortProducts(
       filtered.sort((a, b) => b.rating - a.rating);
       break;
     case "newest":
-      filtered.sort((a, b) => b.id - a.id);
+      filtered.sort((a: any, b: any) => b.id - a.id);
       break;
     default:
       break;

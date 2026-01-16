@@ -2,14 +2,14 @@ import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { Backend_URL } from "@/constants/ConstantsUrl";
-// Helper function to extract expiration from JWT token
+
+//===================================================================
+//
+//===================================================================
 function getExpiresInFromToken(accessToken: string): number {
   try {
-    // Decode JWT (base64url decode the payload)
     const parts = accessToken.split(".");
-    if (parts.length !== 3) return Date.now() + 900000; // Default 15 minutes
-
-    // Base64URL decode (replace - with +, _ with /, add padding if needed)
+    if (parts.length !== 3) return Date.now() + 900000;
     let base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
     while (base64.length % 4) {
       base64 += "=";
@@ -298,8 +298,8 @@ export const authOptions: NextAuthOptions = {
 
   secret: process.env.NEXTAUTH_SECRET,
   pages: {
-    signIn: "/login",
-    error: "/login",
+    signIn: "/home",
+    error: "/home",
   },
   debug: process.env.NODE_ENV === "development",
 };

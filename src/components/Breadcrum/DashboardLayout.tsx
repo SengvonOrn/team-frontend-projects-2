@@ -8,10 +8,11 @@ import {
   getInitails,
 } from "@/types/product";
 import { StoreFlowIndicator } from "../store/StoreFlowIndicator";
-import { CreateStoreModal, StoreFormData } from "../store/CreateStoreModal";
-import { AddProductModal, ProductFormData } from "../store/AddProductModal";
+import { CreateStoreModal } from "../store/CreateStoreModal";
+import { ProductFormData } from "../store/AddProductModal";
 import { Product } from "@/types/types";
 import { Breadcrumb } from "./Breadcrumb";
+import { useToast } from "@/components/ui/use-toast";
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children,
@@ -23,6 +24,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   userData,
 }) => {
   const router = useRouter();
+  const { toast } = useToast();
 
   // Modal & state
   const [isCreateStoreOpen, setIsCreateStoreOpen] = useState(false);
@@ -51,27 +53,32 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   // STORE HANDLERS
   // ==============================
 
-  const handleCreateStore = async (data: StoreFormData) => {
+  const handleCreateStore = async (storeData: any) => {
     try {
-      console.log("Creating store with data:", data);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      const newStore = {
-        id: `store_${Date.now()}`,
-        name: data.name,
-        addess: data.address,
-        description: data.description,
-        status: "active" as const,
-        createdAt: new Date().toISOString(),
-      };
-      setCreatedStore(newStore);
-      // Redirect to the store page after creation
-      // router.push(`/store/${newStore.id}`);
-      alert("Store created successfully!");
+      console.log("Store created successfully:", storeData);
+
+      setCreatedStore(storeData);
+
+      // Show success toast
+      toast({
+        title: "Success",
+        description: "Store created successfully!",
+      });
+
+      // Optional: Redirect to store page
+      if (storeData?.id) {
+        router.push(`/dashboard/stores/${storeData.id}`);
+      }
+
+      // Refresh the page or refetch stores
+      router.refresh();
     } catch (error) {
-      console.error("Error creating store:", error);
-      alert("Failed to create store. Please try again.");
-      throw error;
+      console.error("Error handling store creation:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to process store creation.",
+      });
     }
   };
 
@@ -106,16 +113,26 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         totalProducts: prev.totalProducts + 1,
       }));
 
-      alert("Product added successfully!");
+      toast({
+        title: "Success",
+        description: "Product added successfully!",
+      });
     } catch (error) {
       console.error("Error adding product:", error);
-      alert("Failed to add product. Please try again.");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add product. Please try again.",
+      });
       throw error;
     }
   };
 
   const handleEditProduct = (product: Product) => {
-    alert(`Edit ${product.name} - connect to your API`);
+    toast({
+      title: "Info",
+      description: `Edit ${product.name} - connect to your API`,
+    });
   };
 
   const handleDeleteProduct = (productId: string) => {
@@ -125,18 +142,25 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         ...prev,
         totalProducts: Math.max(0, prev.totalProducts - 1),
       }));
-      alert("Product deleted successfully!");
+      toast({
+        title: "Success",
+        description: "Product deleted successfully!",
+      });
     }
   };
 
   const handleViewProduct = (product: Product) => {
-    alert(`View ${product.name} - connect to product detail page`);
+    router.push(`/dashboard/products/${product.id}`);
   };
 
   const handleBulkDelete = (productIds: string[]) => {
     setProducts((prev) =>
       prev.filter((p) => !productIds.includes(p.id as string))
     );
+    toast({
+      title: "Success",
+      description: `${productIds.length} products deleted successfully!`,
+    });
   };
 
   return (
@@ -197,11 +221,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       </div>
 
       {/* MODALS */}
-
       <CreateStoreModal
         isOpen={isCreateStoreOpen}
         onClose={() => setIsCreateStoreOpen(false)}
         onSuccess={handleCreateStore}
+        isEditing={false}
       />
     </div>
   );

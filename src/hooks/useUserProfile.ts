@@ -1,4 +1,3 @@
-// hooks/useUserProfile.ts
 import { useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/use-Toast";

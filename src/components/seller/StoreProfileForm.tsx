@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,19 +23,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Building2,
   MapPin,
-  Globe,
   Upload,
   Save,
   X,
@@ -44,16 +32,13 @@ import {
   Settings,
   Store,
   Mail,
-  Phone,
   AlertCircle,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-Toast";
-import { IStore, BusinessHours } from "@/types/store";
-import { cn, storeFormSchema } from "@/utils/utils";
+import { IStore } from "@/types/store";
+import { storeFormSchema } from "@/utils/utils";
 import { updateStore } from "@/lib/action/stores";
-
-// Form validation schema
 
 type StoreFormValues = z.infer<typeof storeFormSchema>;
 
@@ -66,14 +51,32 @@ export default function StoreProfileForm({
   store,
   isLoading = false,
 }: StoreProfileFormProps) {
+  const [logoPreview, setLogoPreview] = useState<string | null>(
+    store.images?.find((img) => img.imageType === "LOGO")?.imageUrl || null
+  );
+  const [bannerPreview, setBannerPreview] = useState<string | null>(
+    store.images?.find((img) => img.imageType === "BANNER")?.imageUrl || null
+  );
+
+  //=================================================================
+  //=================================================================
+
   const { toast } = useToast();
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  // const [logoPreview, setLogoPreview] = useState<string | null>(
+  //   store.logo || null
+  // );
+  // const [bannerPreview, setBannerPreview] = useState<string | null>(
+  //   store.banner || null
+  // );
+
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
+  //================================================================
   // Initialize form with store data
   const form = useForm<StoreFormValues>({
     resolver: zodResolver(storeFormSchema),
@@ -83,17 +86,6 @@ export default function StoreProfileForm({
       address: store.address || "",
       city: store.city || "",
       state: store.state || "",
-      // country: store.country || "",
-      // postalCode: store.postalCode || "",
-      // contactEmail: store.contactEmail || "",
-      // contactPhone: store.contactPhone || "",
-      // website: store.website || "",
-      // isActive: store.isActive ?? true, // ✅ Add isActive with default
-      // businessHours: {
-      //   open: store.businessHours?.open || "",
-      //   close: store.businessHours?.close || "",
-      //   days: store.businessHours?.days || [],
-      // },
     },
   });
 
@@ -110,6 +102,7 @@ export default function StoreProfileForm({
         return;
       }
 
+      setLogoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoPreview(reader.result as string);
@@ -131,6 +124,7 @@ export default function StoreProfileForm({
         return;
       }
 
+      setBannerFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setBannerPreview(reader.result as string);
@@ -139,19 +133,36 @@ export default function StoreProfileForm({
     }
   };
 
-  // ✅ Form submission handler - FIXED
+  // Form submission handler
   const onSubmit = async (data: StoreFormValues) => {
     setIsSubmitting(true);
     try {
-      // ✅ Call server action directly
-      const result = await updateStore(store.id, data);
+      // Create FormData to handle both text and file data
+      const formData = new FormData();
+      // Add text fields
+      formData.append("name", data.name);
+      formData.append("description", data.description || "");
+      formData.append("address", data.address || "");
+      formData.append("city", data.city || "");
+      formData.append("state", data.state || "");
 
+      // Add image files if they were changed
+      if (logoFile) {
+        formData.append("logo", logoFile);
+      }
+      if (bannerFile) {
+        formData.append("banner", bannerFile);
+      }
+      // Call server action with FormData
+      const result = await updateStore(store.id, formData as any);
       if (result.success) {
         toast({
           title: "Success",
           description: "Store profile updated successfully",
         });
         form.reset(data);
+        setLogoFile(null);
+        setBannerFile(null);
       } else {
         toast({
           title: "Error",
@@ -171,17 +182,6 @@ export default function StoreProfileForm({
     }
   };
 
-  // Business hours days options
-  const daysOfWeek = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-  ];
-
   return (
     <div className="space-y-6">
       {/* Store Status Banner */}
@@ -200,7 +200,7 @@ export default function StoreProfileForm({
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="basic" className="flex items-center gap-2">
                 <Store className="w-4 h-4" />
                 Basic Info
@@ -213,17 +213,13 @@ export default function StoreProfileForm({
                 <Mail className="w-4 h-4" />
                 Contact
               </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center gap-2">
-                <Settings className="w-4 h-4" />
-                Settings
-              </TabsTrigger>
             </TabsList>
 
             {/* Basic Information Tab */}
             <TabsContent value="basic" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>{store.name} Store Information</CardTitle>
+                  <CardTitle>Store Information</CardTitle>
                   <CardDescription>
                     Update your store's basic information
                   </CardDescription>
@@ -234,16 +230,14 @@ export default function StoreProfileForm({
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
-                          {store.name}-----------------------
-                        </FormLabel>
+                        <FormLabel>Store Name</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Store className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                             <Input
                               placeholder="Enter store name"
                               className="pl-10"
-                              value={store.name}
+                              {...field}
                             />
                           </div>
                         </FormControl>
@@ -266,7 +260,6 @@ export default function StoreProfileForm({
                             placeholder="Describe your store"
                             className="min-h-[120px]"
                             {...field}
-                            value={field.value || ""}
                           />
                         </FormControl>
                         <FormDescription>
@@ -298,7 +291,6 @@ export default function StoreProfileForm({
                               placeholder="Enter street address"
                               className="pl-10"
                               {...field}
-                              value={field.value || ""}
                             />
                           </div>
                         </FormControl>
@@ -315,11 +307,7 @@ export default function StoreProfileForm({
                         <FormItem>
                           <FormLabel>City</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="City"
-                              {...field}
-                              value={field.value || ""}
-                            />
+                            <Input placeholder="City" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -333,65 +321,12 @@ export default function StoreProfileForm({
                         <FormItem>
                           <FormLabel>State/Province</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="State"
-                              {...field}
-                              value={field.value || ""}
-                            />
+                            <Input placeholder="State" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* <FormField
-                      control={form.control}
-                      name="country"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Country</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select country" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="US">United States</SelectItem>
-                              <SelectItem value="CA">Canada</SelectItem>
-                              <SelectItem value="UK">United Kingdom</SelectItem>
-                              <SelectItem value="AU">Australia</SelectItem>
-                              <SelectItem value="IN">India</SelectItem>
-                              <SelectItem value="KH">Cambodia</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    /> */}
-
-                    {/* <FormField
-                      control={form.control}
-                      name="postalCode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Postal Code</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Postal code"
-                              {...field}
-                              value={field.value || ""}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    /> */}
                   </div>
                 </CardContent>
               </Card>
@@ -412,7 +347,7 @@ export default function StoreProfileForm({
                     <div className="space-y-4">
                       <div className="w-48 h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
                         {logoPreview ? (
-                          <div className="relative">
+                          <div className="relative w-full h-full">
                             <img
                               src={logoPreview}
                               alt="Logo preview"
@@ -423,7 +358,10 @@ export default function StoreProfileForm({
                               variant="destructive"
                               size="icon"
                               className="absolute -top-2 -right-2 w-6 h-6"
-                              onClick={() => setLogoPreview(null)}
+                              onClick={() => {
+                                setLogoPreview(null);
+                                setLogoFile(null);
+                              }}
                             >
                               <X className="w-3 h-3" />
                             </Button>
@@ -474,7 +412,10 @@ export default function StoreProfileForm({
                               variant="destructive"
                               size="icon"
                               className="absolute top-2 right-2 w-6 h-6"
-                              onClick={() => setBannerPreview(null)}
+                              onClick={() => {
+                                setBannerPreview(null);
+                                setBannerFile(null);
+                              }}
                             >
                               <X className="w-3 h-3" />
                             </Button>
@@ -524,194 +465,12 @@ export default function StoreProfileForm({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* <FormField
-                    control={form.control}
-                    name="contactEmail"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact Email</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <Input
-                              type="email"
-                              placeholder="contact@example.com"
-                              className="pl-10"
-                              {...field}
-                              value={field.value || ""}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormDescription>
-                          Customers will use this email to contact you
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  /> */}
-
-                  {/* <FormField
-                    control={form.control}
-                    name="contactPhone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact Phone</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <Input
-                              type="tel"
-                              placeholder="+1 (555) 123-4567"
-                              className="pl-10"
-                              {...field}
-                              value={field.value || ""}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormDescription>
-                          Include country code if applicable
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  /> */}
-
-                  {/* <FormField
-                    control={form.control}
-                    name="website"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Website</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <Input
-                              placeholder="https://example.com"
-                              className="pl-10"
-                              {...field}
-                              value={field.value || ""}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  /> */}
+                  <p className="text-sm text-gray-500">
+                    Contact information fields coming soon.
+                  </p>
                 </CardContent>
               </Card>
             </TabsContent>
-
-            {/* Settings Tab */}
-            {/* <TabsContent value="settings" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Store Settings</CardTitle>
-                  <CardDescription>
-                    Manage your store preferences
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="isActive"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">
-                            Store Status
-                          </FormLabel>
-                          <FormDescription>
-                            {field.value
-                              ? "Your store is visible to customers"
-                              : "Your store is hidden from customers"}
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <Separator />
-
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Business Hours</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="businessHours.open"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Opening Time</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="time"
-                                {...field}
-                                value={field.value || ""}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="businessHours.close"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Closing Time</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="time"
-                                {...field}
-                                value={field.value || ""}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="businessHours.days"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Business Days</FormLabel>
-                          <div className="flex flex-wrap gap-2">
-                            {daysOfWeek.map((day) => (
-                              <Button
-                                key={day}
-                                type="button"
-                                variant={
-                                  field.value?.includes(day)
-                                    ? "default"
-                                    : "outline"
-                                }
-                                size="sm"
-                                onClick={() => {
-                                  const currentDays = field.value || [];
-                                  const newDays = currentDays.includes(day)
-                                    ? currentDays.filter((d) => d !== day)
-                                    : [...currentDays, day];
-                                  field.onChange(newDays);
-                                }}
-                              >
-                                {day.slice(0, 3)}
-                              </Button>
-                            ))}
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent> */}
           </Tabs>
 
           {/* Action Buttons */}
@@ -726,7 +485,13 @@ export default function StoreProfileForm({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => form.reset()}
+                onClick={() => {
+                  form.reset();
+                  setLogoPreview(store.logo || null);
+                  setBannerPreview(store.banner || null);
+                  setLogoFile(null);
+                  setBannerFile(null);
+                }}
                 disabled={isSubmitting}
               >
                 Reset Changes

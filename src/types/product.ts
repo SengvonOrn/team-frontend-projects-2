@@ -2,18 +2,17 @@ import { BreadcrumbItem } from "@/lib/breakcrumb/navigationBreadcrumb";
 import { ReactNode } from "react";
 import { UserData } from "./user";
 
-export interface Product {
-  id: number;
-  name: string;
-  description: string;
-  originalPrice?: number;
-  discount?: number;
-  price: number;
-  reviews?: number;
-  rating: number;
-  image?: string;
-  // images?: string[];
-}
+// export interface Product {
+//   id: number;
+//   name: string;
+//   description: string;
+//   originalPrice?: number;
+//   discount?: number;
+//   price: number;
+//   reviews?: number;
+//   rating: number;
+//   image?: string;
+// }
 
 
 export interface DashboardLayoutProps {
@@ -64,3 +63,8 @@ export interface ProductFilters {
   freeDeliveryOnly: boolean;
   inStockOnly: boolean;
 }
+
+
+
+//=========================================================
+

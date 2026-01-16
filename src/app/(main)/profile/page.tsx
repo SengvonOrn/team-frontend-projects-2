@@ -10,7 +10,7 @@ import { TabType } from "@/constants/userSideProfile";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { DashboardLayout } from "@/components/Breadcrum/DashboardLayout";
 import { BreadcrumbItem } from "@/lib/breakcrumb/navigationBreadcrumb";
-import { AddProducts } from "@/components/profile/AddProduct";
+import { AddProducts } from "@/components/store/AddProduct";
 import { Settings } from "@/components/profile/Settings";
 import LocationTracker from "@/components/profile/LocationTracker";
 import { PaymentMethod } from "@/components/profile/PaymentsMethod";
@@ -24,7 +24,6 @@ export default function UserProfilePage() {
   const { loading, saving, userData, load, update, resetFormData } =
     useUserProfile();
 
-    
   // Get tab from URL query parameter
   const tabFromUrl = searchParams.get("tab") as TabType | null;
   const [activeTab, setActiveTab] = useState<TabType>(tabFromUrl || "overview");

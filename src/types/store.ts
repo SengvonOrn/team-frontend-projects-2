@@ -18,42 +18,50 @@ export interface IProduct {
 }
 
 export interface BusinessHours {
-  open?: string;      // e.g., "09:00"
-  close?: string;     // e.g., "18:00"
-  days?: string[];    // e.g., ["Monday", "Tuesday", ...]
+  open?: string; // e.g., "09:00"
+  close?: string; // e.g., "18:00"
+  days?: string[]; // e.g., ["Monday", "Tuesday", ...]
+}
+
+export type ImageType = "LOGO" | "BANNER" | "GALLERY";
+
+export interface IStoreImage {
+  id: string;
+  storeId: string;
+  imageUrl: string;
+  imageType: ImageType;
+  cloudinaryPublicId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface IStore {
   id: string;
   userId: number;
-  
+
   // Basic Info
   name: string;
   description?: string;
-  
+
   // Location
   address?: string;
   city?: string;
   state?: string;
-  country?: string;
-  postalCode?: string;
-  
-  // Contact
-  contactEmail?: string;
-  contactPhone?: string;
-  website?: string;
-  
+
   // Media
-  logo?: string;
-  banner?: string;
-  
+  images?: IStoreImage[];
+
+  // Convenience getters for frontend
+  logo?: string; // derived from images
+  banner?: string; // derived from images
+
   // Status & Hours
   isActive?: boolean;
   businessHours?: BusinessHours;
-  
+
   // Relations
   products?: IProduct[];
-  
+
   // Timestamps
   createdAt: string;
   updatedAt: string;
